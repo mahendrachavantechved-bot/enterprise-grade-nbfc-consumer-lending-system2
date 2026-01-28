@@ -1,7 +1,8 @@
 version: "1.2"
 
 metadata:
-  nbfc_name: "Demo NBFC Ltd"
+  nbfc_name: "YourNBFC Ltd"
+  product: "Consumer Lending"
   environment: "demo"
 
 composite_risk_score:
@@ -14,18 +15,33 @@ visualization_rules:
       max: 900
       label: "Very Low Risk"
       color: "#00C853"
+      decision: "Auto Approve"
+      max_loan_multiple: 4.0
 
-    - min: 650
+    - min: 675
       max: 749
       label: "Low Risk"
       color: "#64DD17"
+      decision: "Auto Approve (Velocity Check)"
+      max_loan_multiple: 3.0
 
     - min: 600
-      max: 649
+      max: 674
       label: "Moderate Risk"
       color: "#FFB300"
+      decision: "Manual Review"
+      max_loan_multiple: 2.0
 
-    - min: 300
+    - min: 500
       max: 599
       label: "High Risk"
+      color: "#FF5722"
+      decision: "Credit Manager Escalation"
+      max_loan_multiple: 1.0
+
+    - min: 300
+      max: 499
+      label: "Very High Risk"
       color: "#D50000"
+      decision: "Auto Decline"
+      max_loan_multiple: 0.0
