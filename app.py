@@ -1,69 +1,69 @@
 import streamlit as st
-import yaml
-import os
+from engine import run_credit_flow
+from utils.yaml_loader import load_yaml
 
-# ----------------------------
-# Load YAML configuration
-# ----------------------------
-CONFIG_FILE = "nbfc-credit-visibility-config.yaml"
+st.set_page_config(page_title="NBFC Credit Visibility", layout="wide")
 
-if not os.path.exists(CONFIG_FILE):
-    st.error("YAML configuration file not found.")
-    st.stop()
+config = load_yaml("nbfc-credit-visibility-config.yaml")
 
-with open(CONFIG_FILE, "r") as f:
-    config = yaml.safe_load(f)
+st.title("🏦 NBFC Credit Risk Visibility Dashboard")
 
-# ----------------------------
-# Mock Credit Scoring Logic
-# ----------------------------
-bureau_score = 720
-internal_score = 680
+# ---------------- INPUT PANEL ----------------
+with st.sidebar:
+    st.header("Applicant Inputs")
 
-bureau_weight = config["composite_risk_score"]["bureau_weight"]
-internal_weight = config["composite_risk_score"]["internal_weight"]
+    bureau_score = st.slider("Bureau Score", 300, 900, 650)
+    internal_score = st.slider("Internal Score", 300, 900, 620)
+    overdue_days = st.number_input("Overdue Days", 0, 180, 0)
+    emi_to_income = st.slider("EMI to Income %", 0, 100, 40)
+    device_risk = st.selectbox("Device Risk", ["low", "medium", "high"])
 
-final_score = int(
-    bureau_weight * bureau_score +
-    internal_weight * internal_score
-)
+    run = st.button("Run Credit Decision")
 
-risk_label = "Unknown"
-risk_color = "#999999"
+# ---------------- PROCESS ----------------
+if run:
+    result = run_credit_flow(
+        config,
+        {
+            "bureau_score": bureau_score,
+            "internal_score": internal_score,
+            "overdue_days": overdue_days,
+            "emi_to_income": emi_to_income,
+            "device_risk": device_risk
+        }
+    )
 
-for band in config["visualization_rules"]["score_bands"]:
-    if band["min"] <= final_score <= band["max"]:
-        risk_label = band["label"]
-        risk_color = band["color"]
-        break
+    # ---------------- PHASE 1 ----------------
+    st.subheader("📊 Composite Credit Score")
 
-# ----------------------------
-# Streamlit UI
-# ----------------------------
-st.set_page_config(
-    page_title="NBFC Credit Risk Dashboard",
-    layout="centered"
-)
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Bureau Score", result["bureau_score"])
+    col2.metric("Internal Score", result["internal_score"])
+    col3.metric("Final Score", result["composite_score"])
 
-st.title("NBFC Credit Risk Dashboard")
+    band = result["risk_band"]
 
-st.metric("Composite Credit Score", final_score)
+    st.success(
+        f"**Risk Band:** {band['label']}  \n"
+        f"**Decision:** {band['decision']}  \n"
+        f"**Max Loan Multiple:** {band['max_loan_multiple']}x"
+    )
 
-st.markdown(
-    f"""
-    <div style="
-        margin-top:20px;
-        padding:16px;
-        background:{risk_color};
-        color:white;
-        font-size:18px;
-        border-radius:8px;
-        text-align:center;
-        ">
-        {risk_label}
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+    # ---------------- PHASE 2 ----------------
+    st.subheader("🚨 Key Risk Indicators")
 
-st.caption("Enterprise NBFC Demo • YAML-Driven • Streamlit Cloud Safe")
+    if result["risk_flags"]:
+        for f in result["risk_flags"]:
+            st.warning(f)
+    else:
+        st.success("No critical risk flags detected")
+
+    # ---------------- PHASE 3 ----------------
+    st.subheader("🧑‍💼 Workflow Ownership")
+
+    if "Auto" in band["decision"]:
+        st.info("Handled by **Credit Automation Engine**")
+    elif "Manual" in band["decision"]:
+        st.info("Assigned to **Credit Analyst Queue**")
+    else:
+        st.error("Escalated to **Credit Manager**")
