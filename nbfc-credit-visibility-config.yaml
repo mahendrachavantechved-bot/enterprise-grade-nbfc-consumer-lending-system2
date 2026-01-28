@@ -1,0 +1,31 @@
+version: "1.2"
+
+metadata:
+  nbfc_name: "Demo NBFC Ltd"
+  environment: "demo"
+
+composite_risk_score:
+  bureau_weight: 0.65
+  internal_weight: 0.35
+
+visualization_rules:
+  score_bands:
+    - min: 750
+      max: 900
+      label: "Very Low Risk"
+      color: "#00C853"
+
+    - min: 650
+      max: 749
+      label: "Low Risk"
+      color: "#64DD17"
+
+    - min: 600
+      max: 649
+      label: "Moderate Risk"
+      color: "#FFB300"
+
+    - min: 300
+      max: 599
+      label: "High Risk"
+      color: "#D50000"
